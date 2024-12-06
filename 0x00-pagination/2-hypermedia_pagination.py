@@ -74,4 +74,3 @@ class Server:
         }
 
         return hyperMedia
-

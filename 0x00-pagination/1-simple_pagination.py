@@ -6,6 +6,7 @@ import csv
 import math
 from typing import List
 
+
 def index_range(page, page_size):
     '''
     Return the range of indexes for a agiven page
@@ -14,16 +15,16 @@ def index_range(page, page_size):
     end = page * page_size
     return start, end
 
+
 class Server:
     """Server class to paginate a dataset of popular baby names.
     """
     DATA_FILE = "Popular_Baby_Names.csv"
 
     def __init__(self):
-        self.__dataset = None 
+        self.__dataset = None
 
-
-    def dataset(self) -> List[List]: # sourcery skip: identity-comprehension
+    def dataset(self) -> List[List]:  # sourcery skip: identity-comprehension
         """Cached dataset"""
         if self.__dataset is None:
             with open(self.DATA_FILE) as f:
@@ -40,12 +41,8 @@ class Server:
         assert isinstance(page_size, int) and page_size > 0
         self.dataset()
 
-        if self.dataset() as None:
+        if self.dataset() is None:
             return []
 
         indexRange = index_range(page, page_size)
         return self.dataset()[indexRange[0]:indexRange[1]]
-
-
-
-
