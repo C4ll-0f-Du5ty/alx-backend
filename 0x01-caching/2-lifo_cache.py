@@ -1,62 +1,42 @@
-#!/usr/bin/env python3
-"""
-This module contains the LIFOCache class that implements a caching system using
-the Last In, First Out (LIFO) algorithm.
-"""
+#!/usr/bin/python3
+""" LIFO Caching """
 
 from base_caching import BaseCaching
-from collections import OrderedDict
 
 
 class LIFOCache(BaseCaching):
-    """
-    LIFOCache class implements a caching system with LIFO eviction policy.
-
-    Args:
-        BaseCaching (class): Base class with cache system interface.
-    """
+    """ LIFO caching """
 
     def __init__(self):
-        """
-        Initialize the cache.
-
-        Attributes:
-            cache_data (OrderedDict): Dictionary to store the cache items while
-            maintaining their insertion order.
-        """
+        """ Constructor """
         super().__init__()
-        self.cache_data = OrderedDict()
+        self.queue = []
 
     def put(self, key, item):
-        """
-        Add an item to the cache. If the cache exceeds its maximum size,
-        remove the last added item.
-
-        Args:
-            key (str): The key under which the item should be stored.
-            item (any): The item to be stored in the cache.
-
-        Returns:
-            None
-        """
+        """ Puts item in cache """
         if key is None or item is None:
             return
-        if len(self.cache_data) >= BaseCaching.MAX_ITEMS:
-            discard = self.cache_data.popitem()
-            print(f"DISCARD: {discard[0]}")
+
         self.cache_data[key] = item
 
+        if len(self.cache_data) > BaseCaching.MAX_ITEMS:
+            if self.queue:
+                last = self.queue.pop()
+                del self.cache_data[last]
+                print("DISCARD: {}".format(last))
+
+        if key not in self.queue:
+            self.queue.append(key)
+        else:
+            self.mv_last_list(key)
+
     def get(self, key):
-        """
-        Retrieve an item from the cache by key.
+        """ Gets item from cache """
+        return self.cache_data.get(key, None)
 
-        Args:
-            key (str): The key of the item to be retrieved.
-
-        Returns:
-            any: The value associated with the key, or None if the key is not
-            found.
-        """
-        if key is None:
-            return None
-        return self.cache_data.get(key)
+    def mv_last_list(self, item):
+        """ Moves element to last idx of list """
+        length = len(self.queue)
+        if self.queue[length - 1] != item:
+            self.queue.remove(item)
+            self.queue.append(item)

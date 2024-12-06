@@ -17,7 +17,7 @@ class Server:
         self.__dataset = None
         self.__indexed_dataset = None
 
-    def dataset(self) -> List[List]:
+    def dataset(self) -> List[List]:  # sourcery skip: identity-comprehension
         """Cached dataset
         """
         if self.__dataset is None:
@@ -40,50 +40,33 @@ class Server:
         return self.__indexed_dataset
 
     def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
-        """
-    Retrieve a deletion-resilient page of the dataset.
+        """ Deletion-resilient hypermedia pagination """
 
-    This method returns a dictionary containing the current page of the dataset
-    based on the given start index and page size. It ensures that if rows have
-    been deleted from the dataset, the user does not miss any items when
-    paginating.
+        idx_dataset = self.indexed_dataset()
 
-    Args:
-        index (int, optional): The start index of the return page.
-                               Must be within the valid range of dataset
-                               indices.
-                               Defaults to None.
-        page_size (int, optional): The number of items to include in
-                                the returned
-                                   page. Defaults to 10.
+        assert isinstance(index, int) and index < (len(idx_dataset) - 1)
 
-    Returns:
-        Dict: A dictionary containing:
-            - 'index' (int): The current start index of the return page.
-            - 'data' (List[List]): The actual page of the dataset.
-            - 'page_size' (int): The current page size.
-            - 'next_index' (int): The next index to query with.
+        i, mv, data = 0, index, []
+        while (i < page_size and index < len(idx_dataset)):
+            value = idx_dataset.get(mv, None)
+            if value:
+                data.append(value)
+                i += 1
+            mv += 1
 
-    Raises:
-        AssertionError: If the provided index is out of the valid range.
-    """
-        assert 1 <= index <= len(self.dataset())
-        # if self.__indexed_dataset is None:
-        #     dataset = self.dataset()
-        # next_index = index + page_size
-        # data = (self.dataset())[index: next_index]
-        indexed_data = self.indexed_dataset()
+        next_index = None
+        while (mv < len(idx_dataset)):
+            value = idx_dataset.get(mv, None)
+            if value:
+                next_index = mv
+                break
+            mv += 1
 
-        data = []
-        next_index = index
-        while len(data) < page_size and next_index < len(self.dataset()):
-            if next_index in indexed_data:
-                data.append(indexed_data[next_index])
-            next_index += 1
-        my_dict = {
+        hyper = {
             'index': index,
-            'data': data,
+            'next_index': next_index,
             'page_size': page_size,
-            'next_index': next_index
+            'data': data
         }
-        return my_dict
+
+        return hyper

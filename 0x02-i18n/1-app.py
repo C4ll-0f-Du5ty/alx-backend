@@ -1,51 +1,34 @@
 #!/usr/bin/env python3
-"""
-This module starts a Flask web application and renders a template on the root
-route.
+'''
+    Basic Babel setup.
+'''
 
-The application runs on host '0.0.0.0' and port 5000 with debug mode enabled.
-"""
-
-from flask import Flask, render_template
 from flask_babel import Babel
+from flask import Flask, render_template
 
-app = Flask(__name__)
-
-
-class Config:
-    """
-    Configuration class for setting application parameters.
-
-    Attributes:
-        LANGUAGES (list): Supported languages.
-        BABEL_DEFAULT_LOCALE (str): Default locale for the application.
-        BABEL_DEFAULT_TIMEZONE (str): Default timezone for the application.
-    """
-    LANGUAGES = ["en", "fr"]
-    BABEL_DEFAULT_LOCALE = LANGUAGES[0]
-    BABEL_DEFAULT_TIMEZONE = "UTC"
-
-
-app.config.from_object(Config)
+app = Flask(__name__, template_folder='templates')
 babel = Babel(app)
 
 
-@app.route('/')
-def hello_world() -> str:
-    """
-    Renders the '1-index.html' template on the root route.
+class Config(object):
+    '''
+        Babel configuration.
+    '''
+    LANGUAGES = ['en', 'fr']
+    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_DEFAULT_TIMEZONE = 'UTC'
 
-    Returns:
-        str: The rendered HTML content of the '1-index.html' template.
-    """
+
+app.config.from_object(Config)
+
+
+@app.route('/', methods=['GET'], strict_slashes=False)
+def helloWorld() -> str:
+    '''
+        Render template for Babel usage.
+    '''
     return render_template('1-index.html')
 
 
-if __name__ == "__main__":
-    """
-    Starts the Flask web application.
-
-    The application will run in debug mode, listening on all available
-    IP addresses on port 5000.
-    """
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    app.run()

@@ -1,48 +1,46 @@
-#!/usr/bin/python3
-"""_summary_
-"""
 
-from collections import OrderedDict
+#!/usr/bin/python3
+""" MRU Caching """
+
 from base_caching import BaseCaching
 
 
 class MRUCache(BaseCaching):
-    """_summary_
+    """ MRU caching """
 
-    Args:
-        BaseCaching (_type_): _description_
-    """
     def __init__(self):
+        """ Constructor """
         super().__init__()
-        self.cache_data = OrderedDict()
+        self.queue = []
 
     def put(self, key, item):
-        """_summary_
-
-        Args:
-            key (_type_): _description_
-            item (_type_): _description_
-        """
+        """ Puts item in cache """
         if key is None or item is None:
             return
-        if key in self.cache_data:
-            self.cache_data.move_to_end(key)
-        elif len(self.cache_data) >= BaseCaching.MAX_ITEMS:
-            discard = self.cache_data.popitem()
-            print(f"DISCARD: {discard[0]}")
 
         self.cache_data[key] = item
 
+        if len(self.cache_data) > BaseCaching.MAX_ITEMS:
+            if self.queue:
+                last = self.queue.pop()
+                del self.cache_data[last]
+                print("DISCARD: {}".format(last))
+
+        if key not in self.queue:
+            self.queue.append(key)
+        else:
+            self.mv_last_list(key)
+
     def get(self, key):
-        """_summary_
+        """ Gets item from cache """
+        item = self.cache_data.get(key, None)
+        if item is not None:
+            self.mv_last_list(key)
+        return item
 
-        Args:
-            key (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        if key not in self.cache_data or key is None:
-            return None
-        self.cache_data.move_to_end(key)
-        return self.cache_data[key]
+    def mv_last_list(self, item):
+        """ Moves element to last idx of list """
+        length = len(self.queue)
+        if self.queue[length - 1] != item:
+            self.queue.remove(item)
+            self.queue.append(item)

@@ -1,96 +1,71 @@
-#!/usr/bin/env python3
-"""
-LFUCache module implements a caching system using
-the Least Frequently Used (LFU) algorithm.
-"""
+#!/usr/bin/python3
+""" LFU Caching """
 
-from collections import OrderedDict, defaultdict
 from base_caching import BaseCaching
 
 
 class LFUCache(BaseCaching):
-    """
-    LFUCache class implements a caching system with LFU eviction policy.
+    """ LFU caching """
 
-    Args:
-        BaseCaching (class): Base class with cache system interface.
-    """
     def __init__(self):
-        """
-        Initialize the cache.
-
-        Attributes:
-            cache_data (OrderedDict): Dictionary to store the cache items.
-            frequency (defaultdict): Dictionary to store the frequency
-            count of items.
-            lru (defaultdict): Dictionary to store the order of insertion for
-            LRU policy within the same frequency count.
-            lru_counter (int): Counter to maintain the order of insertion.
-        """
+        """ Constructor """
         super().__init__()
-        self.cache_data = OrderedDict()
-        self.frequency = defaultdict(int)
-        self.lru = defaultdict(OrderedDict)
-        self.lru_counter = 0
+        self.queue = []
+        self.counter = {}
 
     def put(self, key, item):
-        """
-        Add an item to the cache. If the cache exceeds its maximum size,
-        remove the least frequently used item, and if there's a tie,
-        remove the least recently used item within the same frequency.
-
-        Args:
-            key (str): The key under which the item should be stored.
-            item (any): The item to be stored in the cache.
-
-        Returns:
-            None
-        """
+        """ Puts item in cache """
         if key is None or item is None:
             return
 
-        if key in self.cache_data:
-            self.cache_data[key] = item
-            self.get(key)
-            return
-
-        if len(self.cache_data) >= BaseCaching.MAX_ITEMS:
-            min_freq = min(self.frequency.values())
-            lru_key = next(iter(self.lru[min_freq]))
-            self.cache_data.pop(lru_key)
-            self.frequency.pop(lru_key)
-            self.lru[min_freq].pop(lru_key)
-            if not self.lru[min_freq]:
-                self.lru.pop(min_freq)
-            print(f"DISCARD: {lru_key}")
-
         self.cache_data[key] = item
-        self.frequency[key] = 1
-        self.lru[1][key] = self.lru_counter
-        self.lru_counter += 1
+
+        item_count = self.counter.get(key, None)
+
+        if item_count is not None:
+            self.counter[key] += 1
+        else:
+            self.counter[key] = 1
+
+        if len(self.cache_data) > BaseCaching.MAX_ITEMS:
+            first = self.get_first_list(self.queue)
+            if first:
+                self.queue.pop(0)
+                del self.cache_data[first]
+                del self.counter[first]
+                print("DISCARD: {}".format(first))
+
+        if key not in self.queue:
+            self.queue.insert(0, key)
+        self.mv_right_list(key)
 
     def get(self, key):
-        """
-        Retrieve an item from the cache by key.
+        """ Gets item from cache """
+        item = self.cache_data.get(key, None)
+        if item is not None:
+            self.counter[key] += 1
+            self.mv_right_list(key)
+        return item
 
-        Args:
-            key (str): The key of the item to be retrieved.
+    def mv_right_list(self, item):
+        """ Moves element to the right, taking into account LFU """
+        length = len(self.queue)
 
-        Returns:
-            any: The value associated with the key,
-            or None if the key is not found.
-        """
-        if key is None or key not in self.cache_data:
-            return None
+        idx = self.queue.index(item)
+        item_count = self.counter[item]
 
-        value = self.cache_data[key]
+        for i in range(idx, length):
+            if i != (length - 1):
+                nxt = self.queue[i + 1]
+                nxt_count = self.counter[nxt]
 
-        freq = self.frequency[key]
-        self.frequency[key] += 1
-        self.lru[freq].pop(key)
-        if not self.lru[freq]:
-            self.lru.pop(freq)
-        self.lru[freq + 1][key] = self.lru_counter
-        self.lru_counter += 1
+                if nxt_count > item_count:
+                    break
 
-        return value
+        self.queue.insert(i + 1, item)
+        self.queue.remove(item)
+
+    @staticmethod
+    def get_first_list(array):
+        """ Get first element of list or None """
+        return array[0] if array else None
